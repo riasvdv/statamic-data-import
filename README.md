@@ -2,7 +2,7 @@
 
 Import data from a CSV into a collection.
 
-![Data Import](./docs/img/data-import.png)
+![Data Import](https://github.com/riasvdv/statamic-data-import/raw/master/docs/img/data-import.png)
 
 ## Installation
 
