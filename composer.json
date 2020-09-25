@@ -1,0 +1,23 @@
+{
+    "name": "rias/statamic-data-import",
+    "autoload": {
+        "psr-4": {
+            "Rias\\StatamicDataImport\\": "src"
+        }
+    },
+    "require": {
+        "statamic/cms": "^3.0",
+        "spatie/simple-excel": "~1.2.3"
+    },
+    "extra": {
+        "statamic": {
+            "name": "Statamic Data Import",
+            "description": "Statamic Data Import addon"
+        },
+        "laravel": {
+            "providers": [
+                "Rias\\StatamicDataImport\\DataImportServiceProvider"
+            ]
+        }
+    }
+}
