@@ -7,7 +7,7 @@
     },
     "require": {
         "statamic/cms": "^3.0",
-        "spatie/simple-excel": "~1.2.3"
+        "spatie/simple-excel": "^1.9"
     },
     "extra": {
         "statamic": {
