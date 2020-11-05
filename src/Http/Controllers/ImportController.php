@@ -4,6 +4,7 @@ namespace Rias\StatamicDataImport\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Rias\StatamicDataImport\Jobs\ImportJob;
 use Spatie\SimpleExcel\SimpleExcelReader;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
@@ -48,11 +49,13 @@ class ImportController
         $file = $request->file('file');
         $path = $file->storeAs('data-import', 'data-import.csv');
         $path = storage_path('app/' . $path);
+        $delimiter = request('delimiter', ',');
 
         $reader = SimpleExcelReader::create($path)
-            ->useDelimiter(request('delimiter', ','));
+            ->useDelimiter($delimiter);
 
         $request->session()->put('data-import-path', $path);
+        $request->session()->put('data-import-delimiter', $delimiter);
 
         $keys = array_keys($reader->getRows()->first());
 
@@ -84,67 +87,29 @@ class ImportController
 
     public function finalize(Request $request)
     {
-        $mapping = collect($request->get('mapping'))->filter();
-        $arrayDelimiter = $request->get('array_delimiter', '|');
         $path = $request->session()->get('data-import-path');
-        $reader = SimpleExcelReader::create($path)
-            ->useDelimiter(request('delimiter', ','));
-        $rowCount = $reader->getRows()->count();
+        $delimiter = $request->session()->get('data-import-delimiter');
+        $arrayDelimiter = $request->get('array_delimiter', '|');
+        $mapping = collect($request->get('mapping'))->filter();
+        $collection = $request->session()->get('data-import-collection');
+        $site = session()->get('data-import-site', Site::default()->handle());
 
-        /** @var \Statamic\Entries\Collection $collection */
-        $collection = Collection::findByHandle($request->session()->get('data-import-collection'));
+        $uuid = Str::uuid()->toString();
 
-        $failedRows = [];
-        $errors = [];
-        $reader->getRows()->each(function (array $row, int $index) use ($arrayDelimiter, $collection, $mapping, &$failedRows, &$errors) {
-            $mappedData = $mapping->map(function (string $rowKey) use ($arrayDelimiter, $row) {
-                $value = explode($arrayDelimiter, $row[$rowKey]);
-
-                if (count($value) === 1) {
-                    return $value[0];
-                }
-
-                return $value;
-            });
-
-            $title = $mappedData->get('title');
-            if (! $title) {
-                $failedRows[] = $row;
-                $errors[] = "[Row {$index}]: No title.";
-                return;
-            }
-
-            $entry = Entry::make()
-                ->slug(Str::slug($mappedData->get('title')))
-                ->locale(session()->get('data-import-site', Site::default()->handle()))
-                ->collection($collection)
-                ->data($mappedData);
-
-            if ($collection->dated()) {
-                $entry->date($mappedData->get('date', now()));
-            }
-
-            if (! $entry->save()) {
-                $failedRows[] = $row;
-                $errors[] = "[Row {$index}]: Failed to save.";
-            }
-        });
-
-        $data = [
-            'errors' => $errors,
-            'rowCount' => $rowCount,
-            'failedRows' => $failedRows,
-        ];
+        ImportJob::dispatch($uuid, $path, $site, $collection, $mapping, $delimiter, $arrayDelimiter);
 
         $request->session()->forget('data-import-path');
         $request->session()->forget('data-import-keys');
         $request->session()->forget('data-import-collection');
         $request->session()->forget('data-import-site');
 
-        File::delete($path);
+        return redirect(cp_route('data-import.show', $uuid));
+    }
 
-        Stache::refresh();
-
-        return view('data-import::finalize', $data);
+    public function show(string $uuid)
+    {
+        return view('data-import::finalize', [
+            'uuid' => $uuid,
+        ]);
     }
 }

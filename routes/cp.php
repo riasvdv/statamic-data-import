@@ -8,3 +8,4 @@ Route::get('data-import/target', ['\\'. ImportController::class, 'targetSelect']
 Route::post('data-import/show', ['\\'. ImportController::class, 'showData'])->name('data-import.show-data');
 Route::post('data-import/import', ['\\'. ImportController::class, 'import'])->name('data-import.import');
 Route::post('data-import/finalize', ['\\'. ImportController::class, 'finalize'])->name('data-import.finalize');
+Route::get('data-import/{uuid}', ['\\'. ImportController::class, 'show'])->name('data-import.show');
