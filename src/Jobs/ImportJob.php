@@ -14,6 +14,7 @@ use Statamic\Facades\Collection as CollectionFacade;
 use Statamic\Facades\Entry;
 use Statamic\Facades\File;
 use Statamic\Facades\Stache;
+use Statamic\Support\Arr;
 
 class ImportJob implements ShouldQueue
 {
@@ -83,6 +84,7 @@ class ImportJob implements ShouldQueue
             if (! $title) {
                 $failedRows[] = $row;
                 $errors[] = "[Row {$index}]: This row has no title.";
+
                 return;
             }
 
@@ -90,7 +92,7 @@ class ImportJob implements ShouldQueue
                 ->slug(Str::slug($mappedData->get('title')))
                 ->locale($this->site)
                 ->collection($this->collection)
-                ->data($mappedData);
+                ->data(Arr::removeNullValues($mappedData->all()));
 
             if ($this->collection->dated()) {
                 $entry->date($mappedData->get('date', now()));
