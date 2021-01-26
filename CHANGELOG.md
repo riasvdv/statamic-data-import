@@ -1,5 +1,10 @@
 # Release Notes
 
+## 1.1.1 (2021-01-26)
+
+### What's fixed
+- remove empty data (#6)
+
 ## 1.1.0 (2020-11-05)
 
 ### What's new
