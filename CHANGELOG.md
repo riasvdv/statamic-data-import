@@ -1,5 +1,9 @@
 # Release Notes
 
+## 1.1.2 (2021-03-22)
+### What's fixed
+- Fix a route serialization issue - #9
+
 ## 1.1.1 (2021-01-26)
 
 ### What's fixed
