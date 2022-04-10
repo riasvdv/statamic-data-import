@@ -15,8 +15,6 @@ use Statamic\Facades\Entry;
 use Statamic\Facades\File;
 use Statamic\Facades\Stache;
 use Statamic\Fields\Field;
-use Statamic\Fieldtypes\Arr as ArrFieldtype;
-use Statamic\Fieldtypes\Taggable;
 use Statamic\Fieldtypes\Toggle;
 use Statamic\Support\Arr;
 
@@ -93,7 +91,7 @@ class ImportJob implements ShouldQueue
                     $value = $this->toBool($value) ?? $value;
                 }
 
-                if (in_array($field->type(), [Taggable::handle(), ArrFieldtype::handle()])) {
+                if (in_array($field->type(), $this->getArrayFieldtypes())) {
                     $value = Arr::wrap($value);
                 }
 
@@ -145,5 +143,24 @@ class ImportJob implements ShouldQueue
     {
         if (!isset($variable)) return null;
         return filter_var($variable, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    }
+
+    private function getArrayFieldtypes(): array
+    {
+        return [
+            \Statamic\Fieldtypes\Arr::handle(),
+            \Statamic\Fieldtypes\AssetContainer::handle(),
+            \Statamic\Fieldtypes\AssetFolder::handle(),
+            \Statamic\Fieldtypes\Collections::handle(),
+            \Statamic\Fieldtypes\Entries::handle(),
+            \Statamic\Fieldtypes\Sites::handle(),
+            \Statamic\Fieldtypes\Structures::handle(),
+            \Statamic\Fieldtypes\Taggable::handle(),
+            \Statamic\Fieldtypes\Taxonomies::handle(),
+            \Statamic\Fieldtypes\Terms::handle(),
+            \Statamic\Fieldtypes\UserGroups::handle(),
+            \Statamic\Fieldtypes\UserRoles::handle(),
+            \Statamic\Fieldtypes\Users::handle(),
+        ];
     }
 }
