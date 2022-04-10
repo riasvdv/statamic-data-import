@@ -14,6 +14,10 @@ use Statamic\Facades\Collection as CollectionFacade;
 use Statamic\Facades\Entry;
 use Statamic\Facades\File;
 use Statamic\Facades\Stache;
+use Statamic\Fields\Field;
+use Statamic\Fieldtypes\Arr as ArrFieldtype;
+use Statamic\Fieldtypes\Taggable;
+use Statamic\Fieldtypes\Toggle;
 use Statamic\Support\Arr;
 
 class ImportJob implements ShouldQueue
@@ -69,12 +73,28 @@ class ImportJob implements ShouldQueue
 
         $failedRows = [];
         $errors = [];
-        $reader->getRows()->each(function (array $row, int $index) use (&$failedRows, &$errors) {
-            $mappedData = $this->mapping->map(function (string $rowKey) use ($row) {
-                $value = explode($this->arrayDelimiter, $row[$rowKey]);
 
-                if (count($value) === 1) {
-                    return $value[0];
+        $blueprint = $this->collection->entryBlueprint();
+        /** @var Collection $fields */
+        $fields = $blueprint->fields()->resolveFields();
+
+        $reader->getRows()->each(function (array $row, int $index) use (&$failedRows, &$errors, $fields) {
+            $mappedData = $this->mapping->map(function (string $rowKey, string $fieldKey) use ($row, $fields) {
+                $value = trim($row[$rowKey]);
+                $value = explode($this->arrayDelimiter, $value);
+                $value = count($value) === 1 ? $value[0] : $value;
+
+                /** @var ?Field $field */
+                $field = $fields->first(function (Field $field) use ($fieldKey) {
+                    return $field->handle() === $fieldKey;
+                });
+
+                if ($field->type() === Toggle::handle()) {
+                    $value = $this->toBool($value) ?? $value;
+                }
+
+                if (in_array($field->type(), [Taggable::handle(), ArrFieldtype::handle()])) {
+                    $value = Arr::wrap($value);
                 }
 
                 return $value;
@@ -89,10 +109,13 @@ class ImportJob implements ShouldQueue
             }
 
             $entry = Entry::make()
-                ->slug(Str::slug($mappedData->get('title')))
                 ->locale($this->site)
                 ->collection($this->collection)
                 ->data(Arr::removeNullValues($mappedData->all()));
+
+            if ($this->collection->requiresSlugs()) {
+                $entry->slug(Str::slug($mappedData->get('title')));
+            }
 
             if ($this->collection->dated()) {
                 $entry->date($mappedData->get('date', now()));
@@ -112,5 +135,11 @@ class ImportJob implements ShouldQueue
         File::delete($this->path);
 
         Stache::clear();
+    }
+
+    private function toBool($variable): ?bool
+    {
+        if (!isset($variable)) return null;
+        return filter_var($variable, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
     }
 }
