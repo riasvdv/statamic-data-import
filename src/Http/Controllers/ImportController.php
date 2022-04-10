@@ -11,6 +11,8 @@ use Statamic\Facades\Entry;
 use Statamic\Facades\File;
 use Statamic\Facades\Site;
 use Statamic\Facades\Stache;
+use Statamic\Fields\Field;
+use Statamic\Fieldtypes\Section;
 
 class ImportController
 {
@@ -74,7 +76,12 @@ class ImportController
 
         /** @var \Statamic\Fields\Blueprint $blueprint */
         $blueprint = $collection->entryBlueprint();
-        $fields = $blueprint->fields()->resolveFields()->toArray();
+        $fields = $blueprint->fields()
+            ->resolveFields()
+            ->reject(function (Field $field) {
+                return in_array($field->type(), [Section::handle()]);
+            })
+            ->toArray();
 
         $request->session()->put('data-import-collection', $handle);
         $request->session()->put('data-import-site', request('site'));
