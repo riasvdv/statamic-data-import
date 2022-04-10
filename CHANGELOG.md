@@ -3,8 +3,9 @@
 ## 1.2.0 (2022-04-10)
 ## What's changed
 - Add permission for data import - fix #12
-- Better handling of field values - Fix #4 #13 #14 #15
+- Better handling of field values - Fix #4 #13 #15
 - Filter out sections - fix #5
+- Filenames should be Statamic id when slugs are not required - fix #14
 
 ## 1.1.2 (2021-03-22)
 ### What's fixed
