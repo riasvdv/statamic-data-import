@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.2.0 (2022-04-10)
+## What's changed
+- Add permission for data import - fix #12
+- Better handling of field values - Fix #4 #13 #14 #15
+- Filter out sections - fix #5
+
 ## 1.1.2 (2021-03-22)
 ### What's fixed
 - Fix a route serialization issue - #9
