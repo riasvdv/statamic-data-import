@@ -3,6 +3,7 @@
 namespace Rias\StatamicDataImport;
 
 use Statamic\Facades\CP\Nav;
+use Statamic\Facades\Permission;
 use Statamic\Providers\AddonServiceProvider;
 use Statamic\Statamic;
 
@@ -23,11 +24,16 @@ class DataImportServiceProvider extends AddonServiceProvider
         Statamic::booted(function () {
             $this->loadViewsFrom(__DIR__.'/../resources/views', 'data-import');
 
-            Nav::extend(function ($nav) {
+            Nav::extend(function (\Statamic\CP\Navigation\Nav $nav) {
                 $nav->tools('Data Import')
                     ->route('data-import.index')
                     ->icon('upload')
+                    ->can('use data import')
                     ->active('data-import');
+            });
+
+            Permission::group('data-import', 'Data Import', function () {
+                Permission::register('use data import');
             });
         });
     }
