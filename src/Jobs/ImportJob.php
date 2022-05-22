@@ -91,7 +91,7 @@ class ImportJob implements ShouldQueue
                     $value = $this->toBool($value) ?? $value;
                 }
 
-                if (in_array($field->type(), $this->getArrayFieldtypes())) {
+                if (!is_null($value) && in_array($field->type(), $this->getArrayFieldtypes())) {
                     $value = Arr::wrap($value);
                 }
 

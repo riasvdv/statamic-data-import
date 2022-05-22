@@ -1,5 +1,9 @@
 # Release Notes
 
+## 1.2.1 (2022-05-22)
+## What's changed
+- Fix array wrap on null values (#16)
+
 ## 1.2.0 (2022-04-10)
 ## What's changed
 - Add permission for data import - fix #12

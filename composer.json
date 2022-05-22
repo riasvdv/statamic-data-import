@@ -19,5 +19,10 @@
                 "Rias\\StatamicDataImport\\DataImportServiceProvider"
             ]
         }
+    },
+    "config": {
+        "allow-plugins": {
+            "pixelfear/composer-dist-plugin": true
+        }
     }
 }
