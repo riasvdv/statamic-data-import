@@ -1,5 +1,9 @@
 # Release Notes
 
+## 1.2.2 (2022-06-04)
+## What's changed
+- Fix empty check for array values (#16)
+
 ## 1.2.1 (2022-05-22)
 ## What's changed
 - Fix array wrap on null values (#16)
