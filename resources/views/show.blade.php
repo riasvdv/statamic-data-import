@@ -15,7 +15,7 @@
         <div class="card rounded p-3 lg:px-7 lg:py-5 shadow bg-white mb-2">
             <header class="text-center">
                 <h1 class="mb-3">Your data</h1>
-                <p class="text-grey">This page shows the first <strong>5</strong> items of your data. If your data looks good, press continue. Your uploaded file contains <strong>{{ $rowCount }}</strong> rows of data.</p>
+                <p class="text-grey">This page shows the first <strong>5</strong> items of your data. If your data looks good, press continue.<br/>Your uploaded file contains <strong>{{ $rowCount }}</strong> {{ Str::plural('row', $rowCount) }} of data.</p>
             </header>
         </div>
 

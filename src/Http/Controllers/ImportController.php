@@ -11,6 +11,7 @@ use Statamic\Facades\Entry;
 use Statamic\Facades\File;
 use Statamic\Facades\Site;
 use Statamic\Facades\Stache;
+use Statamic\Facades\User;
 use Statamic\Fields\Field;
 use Statamic\Fieldtypes\Section;
 
@@ -71,11 +72,16 @@ class ImportController
 
     public function import(Request $request)
     {
-        $handle = $request->get('collection');
-        $collection = Collection::findByHandle($handle);
+        if ($request->get('type') === 'users') {
+            $blueprint = User::blueprint();
+        } else {
+            $handle = $request->get('collection');
+            $collection = Collection::findByHandle($handle);
 
-        /** @var \Statamic\Fields\Blueprint $blueprint */
-        $blueprint = $collection->entryBlueprint();
+            /** @var \Statamic\Fields\Blueprint $blueprint */
+            $blueprint = $collection->entryBlueprint();
+        }
+
         $fields = $blueprint->fields()
             ->resolveFields()
             ->reject(function (Field $field) {
@@ -83,7 +89,16 @@ class ImportController
             })
             ->toArray();
 
-        $request->session()->put('data-import-collection', $handle);
+        if ($request->get('type') === 'users') {
+            $fields[] = [
+                'type' => 'text',
+                'display' => 'Password',
+                'handle' => 'password',
+            ];
+        }
+
+        $request->session()->put('data-import-type', $request->get('type'));
+        $request->session()->put('data-import-collection', $handle ?? null);
         $request->session()->put('data-import-site', request('site'));
 
         return view('data-import::import', [
@@ -98,15 +113,23 @@ class ImportController
         $delimiter = $request->session()->get('data-import-delimiter');
         $arrayDelimiter = $request->get('array_delimiter', '|');
         $mapping = collect($request->get('mapping'))->filter();
-        $collection = $request->session()->get('data-import-collection');
-        $site = session()->get('data-import-site', Site::default()->handle());
+
+        $type = $request->session()->get('data-import-type');
+
+        $collection = null;
+        $site = null;
+        if ($type === 'collection') {
+            $collection = $request->session()->get('data-import-collection');
+            $site = session()->get('data-import-site', Site::default()->handle());
+        }
 
         $uuid = Str::uuid()->toString();
 
-        ImportJob::dispatch($uuid, $path, $site, $collection, $mapping, $delimiter, $arrayDelimiter);
+        ImportJob::dispatch($uuid, $path, $type, $site, $collection, $mapping, $delimiter, $arrayDelimiter);
 
         $request->session()->forget('data-import-path');
         $request->session()->forget('data-import-keys');
+        $request->session()->forget('data-import-type');
         $request->session()->forget('data-import-collection');
         $request->session()->forget('data-import-site');
 

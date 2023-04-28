@@ -14,6 +14,7 @@ use Statamic\Facades\Collection as CollectionFacade;
 use Statamic\Facades\Entry;
 use Statamic\Facades\File;
 use Statamic\Facades\Stache;
+use Statamic\Facades\User;
 use Statamic\Fields\Field;
 use Statamic\Fieldtypes\Toggle;
 use Statamic\Support\Arr;
@@ -29,9 +30,12 @@ class ImportJob implements ShouldQueue
     private $path;
 
     /** @var string */
+    private $type;
+
+    /** @var string|null */
     private $site;
 
-    /** @var \Statamic\Entries\Collection */
+    /** @var \Statamic\Entries\Collection|null */
     private $collection;
 
     /** @var string */
@@ -46,16 +50,18 @@ class ImportJob implements ShouldQueue
     public function __construct(
         string $uuid,
         string $path,
-        string $site,
-        string $collection,
+        string $type,
+        ?string $site,
+        ?string $collection,
         Collection $mapping,
         string $delimiter = ',',
         string $arrayDelimiter = '|'
     ) {
         $this->uuid = $uuid;
         $this->path = $path;
+        $this->type = $type;
         $this->site = $site;
-        $this->collection = CollectionFacade::findByHandle($collection);
+        $this->collection = $collection ? CollectionFacade::findByHandle($collection) : null;
         $this->delimiter = $delimiter;
         $this->mapping = $mapping;
         $this->arrayDelimiter = $arrayDelimiter;
@@ -72,7 +78,12 @@ class ImportJob implements ShouldQueue
         $failedRows = [];
         $errors = [];
 
-        $blueprint = $this->collection->entryBlueprint();
+        if ($this->type === 'users') {
+            $blueprint = User::blueprint();
+        } else {
+            $blueprint = $this->collection->entryBlueprint();
+        }
+
         /** @var Collection $fields */
         $fields = $blueprint->fields()->resolveFields();
 
@@ -87,40 +98,33 @@ class ImportJob implements ShouldQueue
                     return $field->handle() === $fieldKey;
                 });
 
-                if ($field->type() === Toggle::handle()) {
+                if ($field && $field->type() === Toggle::handle()) {
                     $value = $this->toBool($value) ?? $value;
                 }
 
-                if (!empty($value) && in_array($field->type(), $this->getArrayFieldtypes())) {
+                if ($field && !empty($value) && in_array($field->type(), $this->getArrayFieldtypes())) {
                     $value = Arr::wrap($value);
                 }
 
                 if (is_numeric($value)) {
-                    $value = $value + 0; // This returns int or float
+                    $value += 0; // This returns int or float
                 }
 
                 return $value;
             });
 
             $title = $mappedData->get('title');
-            if (! $title) {
+            if (! $title && $this->type === 'collection') {
                 $failedRows[] = $row;
                 $errors[] = "[Row {$index}]: This row has no title.";
 
                 return;
             }
 
-            $entry = Entry::make()
-                ->locale($this->site)
-                ->collection($this->collection)
-                ->data(Arr::removeNullValues($mappedData->all()));
-
-            if ($this->collection->requiresSlugs()) {
-                $entry->slug(Str::slug($mappedData->get('title')));
-            }
-
-            if ($this->collection->dated()) {
-                $entry->date($mappedData->get('date', now()));
+            if ($this->type === 'users') {
+                $entry = $this->createUser($mappedData);
+            } else {
+                $entry = $this->createEntry($mappedData);
             }
 
             if (! $entry->save()) {
@@ -137,6 +141,40 @@ class ImportJob implements ShouldQueue
         File::delete($this->path);
 
         Stache::clear();
+    }
+
+    protected function createUser(Collection $data): \Statamic\Auth\File\User
+    {
+        /** @var \Statamic\Auth\File\User $user */
+        $user = User::make();
+        $user->email($data->get('email'));
+        $user->roles($data->get('roles', []));
+
+        if ($password = $data->get('password')) {
+            $user->password($password);
+        }
+
+        $user->data(Arr::removeNullValues($data->all()));
+
+        return $user;
+    }
+
+    protected function createEntry(Collection $data): \Statamic\Entries\Entry
+    {
+        $entry = Entry::make()
+            ->locale($this->site)
+            ->collection($this->collection)
+            ->data(Arr::removeNullValues($data->all()));
+
+        if ($this->collection->requiresSlugs()) {
+            $entry->slug(Str::slug($data->get('title')));
+        }
+
+        if ($this->collection->dated()) {
+            $entry->date($data->get('date', now()));
+        }
+
+        return $entry;
     }
 
     private function toBool($variable): ?bool
