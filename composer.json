@@ -6,8 +6,8 @@
         }
     },
     "require": {
-        "statamic/cms": "^3.0",
-        "spatie/simple-excel": "^1.9"
+        "statamic/cms": "^3.0|^4.0",
+        "spatie/simple-excel": "^1.9|^2.0|^3.0"
     },
     "extra": {
         "statamic": {
