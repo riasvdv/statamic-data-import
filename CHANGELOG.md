@@ -1,5 +1,10 @@
 # Release Notes
 
+## 1.3.0 (2023-04-28)
+### What's new
+- You can now import to users
+- Simple excel v2 and v3 are now allowed
+
 ## 1.2.2 (2022-06-04)
 ## What's changed
 - Fix empty check for array values (#16)
