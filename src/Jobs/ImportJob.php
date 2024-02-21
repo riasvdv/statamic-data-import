@@ -106,6 +106,14 @@ class ImportJob implements ShouldQueue
                     $value = Arr::wrap($value);
                 }
 
+                if ($field && !empty($value) && in_array($field->type(), $this->getSetFieldtypes())) {
+                    try {
+                        $value = YAML::parse($value);
+                    } catch (\Throwable $th) {
+                        // don't do anything. leave the value as is
+                    }
+                }
+
                 if (is_numeric($value)) {
                     $value += 0; // This returns int or float
                 }
@@ -199,6 +207,15 @@ class ImportJob implements ShouldQueue
             \Statamic\Fieldtypes\UserGroups::handle(),
             \Statamic\Fieldtypes\UserRoles::handle(),
             \Statamic\Fieldtypes\Users::handle(),
+        ];
+    }
+
+    private function getSetFieldtypes(): array
+    {
+        return [
+            // \Statamic\Fieldtypes\Bard::handle(),
+            \Statamic\Fieldtypes\Replicator::handle(),
+
         ];
     }
 }
