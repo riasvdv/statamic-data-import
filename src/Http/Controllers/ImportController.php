@@ -14,6 +14,7 @@ use Statamic\Facades\Stache;
 use Statamic\Facades\User;
 use Statamic\Fields\Field;
 use Statamic\Fieldtypes\Section;
+use Illuminate\Support\Facades\Storage;
 
 class ImportController
 {
@@ -48,10 +49,11 @@ class ImportController
             'delimiter' => ['required'],
         ]);
 
+        $disk = Storage::disk('local');
         /** @var \Illuminate\Http\UploadedFile $file */
         $file = $request->file('file');
         $path = $file->storeAs('data-import', 'data-import.csv', ['disk' => 'local']);
-        $path = storage_path('app/' . $path);
+        $path = $disk->path($path);
         $delimiter = request('delimiter', ',');
 
         $reader = SimpleExcelReader::create($path)
