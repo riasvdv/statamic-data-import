@@ -50,7 +50,7 @@ class ImportController
 
         /** @var \Illuminate\Http\UploadedFile $file */
         $file = $request->file('file');
-        $path = $file->storeAs('data-import', 'data-import.csv');
+        $path = $file->storeAs('data-import', 'data-import.csv', ['disk' => 'local']);
         $path = storage_path('app/' . $path);
         $delimiter = request('delimiter', ',');
 
