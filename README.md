@@ -1,3 +1,6 @@
+> [!CAUTION]
+> This addon has been depublished and abandoned. Use the official first party [importer](https://github.com/statamic/importer) instead.
+
 # Data Import plugin for Statamic
 
 Import data from a CSV into a collection.
